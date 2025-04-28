@@ -13,7 +13,7 @@ def authenticate_google_sheet():
     client = gspread.authorize(creds)
     return client
 
-def append_to_sheet(spreadsheet_id, sheet_name, data):
+def append_to_sheet(sheet_id, sheet_name, data):
     client = authenticate_google_sheet()
     workbook = client.open_by_key(spreadsheet_id)  # Open workbook by Spreadsheet ID
     sheet = workbook.worksheet(sheet_name)  # Access the specified sheet
