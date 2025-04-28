@@ -61,7 +61,7 @@ st.write(f"Lot Weight: {lot_weight} Kg")
 st.write(f"Output Weight: {output_weight} Kg")
 
 # Example Spreadsheet ID and Sheet Name
-spreadsheet_id = "1PjGYnPurJgk89EaGRQaMxHbYaI5bpn4GbF3F4NnaCiI"  # Replace with your Spreadsheet ID
+spreadsheet_id = "1CmczFgRzDJL2Stk-tVmvwaE6eSciJRSQXqEOo8A5uJM"  # Replace with your Spreadsheet ID
 sheet_name = "production"  # Replace with your Sheet Name
 
 # Save data to Google Sheet
