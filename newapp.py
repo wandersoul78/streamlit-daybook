@@ -1,12 +1,15 @@
 import streamlit as st
-import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import json
 
-# Google Sheets authentication
+# --- Google Sheets authentication using st.secrets ---
 def authenticate_google_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name('amazing-zephyr-446217-g0-b3478d3380a8.json', scope)
+
+    # Load credentials from st.secrets
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     return client
 
@@ -14,30 +17,26 @@ def append_to_sheet(spreadsheet_id, sheet_name, data):
     client = authenticate_google_sheet()
     workbook = client.open_by_key(spreadsheet_id)  # Open workbook by Spreadsheet ID
     sheet = workbook.worksheet(sheet_name)  # Access the specified sheet
-    sheet.append_row(row_data, value_input_option="USER_ENTERED")
+    sheet.append_row(data, value_input_option="USER_ENTERED")
 
-
-# Streamlit app
+# --- Streamlit App ---
 st.title("")
 st.sidebar.header("Input Details")
 
-# User input
+# Sale Items
 sale_items = [
     "Ap25", "Ap50", "Ap5", "1800n", "Rbc", "Ap84", "L10", "L10dbp", 
     "L20", "101n", "L2", "12dbp", "212n", "220n", "C3", "20n", "J20", 
-    "5dop", "2n", "6n", "P94", "P90", "P02", "P23", "Dt94","18n","25s","P01","D2","D5"
+    "5dop", "2n", "6n", "P94", "P90", "P02", "P23", "Dt94", "18n", "25s", "P01", "D2", "D5"
 ]
-# Date
+
+# Inputs
 input_date = st.sidebar.date_input("Date")
-formatted_date = input_date.strftime("%m-%d-%Y")  
+formatted_date = input_date.strftime("%m-%d-%Y")
 
-# Grade
-grade = st.sidebar.selectbox("Grade",sale_items)
-
-# Number of lots
+grade = st.sidebar.selectbox("Grade", sale_items)
 num_lots = st.sidebar.number_input("Number of Lots", min_value=1, step=1)
 
-# Raw material inputs
 st.sidebar.subheader("Raw Material Quantities Per Lot")
 resin_qty = st.sidebar.number_input("Resin Quantity in Kg", min_value=0.0, step=0.1)
 mitti_qty = st.sidebar.number_input("Mitti Quantity in Kg", min_value=0.0, step=0.1)
@@ -46,13 +45,12 @@ dop_qty = st.sidebar.number_input("Dop/Dbp Quantity in Kg", min_value=0.0, step=
 chemical_qty = st.sidebar.number_input("Chemical Quantity in Kg", min_value=0.0, step=0.1)
 other_qty = st.sidebar.number_input("Other Quantity in Kg", min_value=0.0, step=0.1)
 
-# Output weight
 output_weight = st.sidebar.number_input("Output Weight", min_value=0.0, step=0.1)
 
-# Calculate lot weight
-lot_weight = num_lots * (resin_qty + mitti_qty + cpw_qty + chemical_qty + dop_qty )+ other_qty
+# Lot weight calculation
+lot_weight = num_lots * (resin_qty + mitti_qty + cpw_qty + chemical_qty + dop_qty) + other_qty
 
-# Display calculated data
+# Display
 st.subheader("Summary")
 st.write(f"Date: {input_date}")
 st.write(f"Grade: {grade}")
@@ -60,14 +58,22 @@ st.write(f"Number of Lots: {num_lots}")
 st.write(f"Lot Weight: {lot_weight} Kg")
 st.write(f"Output Weight: {output_weight} Kg")
 
-# Example Spreadsheet ID and Sheet Name
-spreadsheet_id = "1CmczFgRzDJL2Stk-tVmvwaE6eSciJRSQXqEOo8A5uJM"  # Replace with your Spreadsheet ID
-sheet_name = "production"  # Replace with your Sheet Name
+# Spreadsheet ID and Sheet Name from secrets
+spreadsheet_id = st.secrets["sheets"]["spreadsheet_id"]
+sheet_name = "production"
 
-# Save data to Google Sheet
+# Save Data Button
 if st.button("Save Data"):
     row_data = [
-        formatted_date, grade, num_lots, resin_qty*num_lots, mitti_qty*num_lots, cpw_qty*num_lots,dop_qty*num_lots, chemical_qty*num_lots, other_qty, lot_weight, output_weight
+        formatted_date, grade, num_lots,
+        resin_qty * num_lots,
+        mitti_qty * num_lots,
+        cpw_qty * num_lots,
+        dop_qty * num_lots,
+        chemical_qty * num_lots,
+        other_qty,
+        lot_weight,
+        output_weight
     ]
     try:
         append_to_sheet(spreadsheet_id, sheet_name, row_data)
@@ -75,5 +81,4 @@ if st.button("Save Data"):
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
-# Note for Google Sheets API configuration
-st.info("Double check the quantities before saving")
+st.info("Double check the quantities before saving.")
