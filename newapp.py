@@ -76,7 +76,7 @@ if st.button("Save Data"):
         output_weight
     ]
     try:
-        append_to_sheet(spreadsheet_id, sheet_name, row_data)
+        append_to_sheet(sheet_id, sheet_name, row_data)
         st.success(f"Data saved successfully to {sheet_name} in the specified workbook!")
     except Exception as e:
         st.error(f"An error occurred: {e}")
