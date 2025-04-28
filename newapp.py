@@ -59,7 +59,7 @@ st.write(f"Lot Weight: {lot_weight} Kg")
 st.write(f"Output Weight: {output_weight} Kg")
 
 # Spreadsheet ID and Sheet Name from secrets
-spreadsheet_id = st.secrets["sheets"]["spreadsheet_id"]
+sheet_id = st.secrets["sheets"]["sheet_id"]
 sheet_name = "production"
 
 # Save Data Button
