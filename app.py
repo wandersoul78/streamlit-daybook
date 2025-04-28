@@ -32,7 +32,7 @@ st.sidebar.title("Menu")
 menu = st.sidebar.radio("Select Action", ["Purchase Entry", "Sale Entry", "Payment/Receipt Entry"])
 
 # --- Google Sheets Setup ---
-sheet_id = st.secrets["sheet_id"]  # Sheet ID from secrets
+sheet_id = st.secrets["sheets"]["sheet_id"]  # Sheet ID from secrets
 worksheet_name = "Daybook"
 sheet = authenticate_gsheets(sheet_id, worksheet_name)
 
