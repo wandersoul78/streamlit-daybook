@@ -25,8 +25,8 @@ def add_to_sheet(sheet, row_data):
     sheet.append_row(row_data, value_input_option="USER_ENTERED")
 
 # --- Streamlit App ---
-st.set_page_config(page_title="Daybook Manager", page_icon="📚")
-st.title("📚 Daybook Manager")
+st.set_page_config(page_title="Data Entry", page_icon="📚")
+st.title("📚 Data Entry")
 
 st.sidebar.title("Menu")
 menu = st.sidebar.radio("Select Action", ["Purchase Entry", "Sale Entry", "Payment/Receipt Entry"])
@@ -174,6 +174,7 @@ elif menu == "Payment/Receipt Entry":
             ]
             add_to_sheet(sheet, data)
         st.success(f"✅ {voucher_type} entry added successfully!")
+
 
 
 
