@@ -29,7 +29,7 @@ st.set_page_config(page_title="Data Entry", page_icon="📚")
 st.title("📚 Data Entry")
 
 st.sidebar.title("Menu")
-menu = st.sidebar.radio("Select Action", ["Purchase Entry", "Sale Entry", "Payment/Receipt Entry"])
+menu = st.sidebar.radio("Select Action", ["Purchase", "Sale", "Payment/Receipt"])
 
 # --- Google Sheets Setup ---
 sheet_id = st.secrets["sheets"]["sheet_id"]  # Sheet ID from secrets
@@ -47,8 +47,8 @@ purchase_items = ["Resin", "C1000", "C001", "Cpw", "DOP", "Dbp", "Tbls", "Dblp",
 sale_items = ["Ap25", "Ap50", "Ap5", "1800n", "Rbc", "Ap84", "L10", "L10dbp", "L20", "101n", "L2", "12dbp", "212n", "220n", "C3", "20n", "J20", "5dop","Dop12", "2n", "6n","115n","15n", "P94", "P90", "P02", "P23","P01", "Dt94","Dop-Al", "GST", "18n", "25s","Drm"]
 
 # --- Menu Options ---
-if menu == "Purchase Entry":
-    st.header("🛒 Purchase Entry")
+if menu == "Purchase":
+    st.header("🛒 Purchase")
     date = st.date_input("Date", datetime.now())
     slip_no = st.text_input("Slip No.")
     party_name = st.selectbox("Party Name", purchase_parties)
@@ -88,10 +88,10 @@ if menu == "Purchase Entry":
                 amount,
             ]
             add_to_sheet(sheet, data)
-        st.success("✅ Purchase entry added successfully!")
+        st.success("✅ Purchase added successfully!")
 
-elif menu == "Sale Entry":
-    st.header("🛒 Sale Entry")
+elif menu == "Sale":
+    st.header("🛒 Sale")
     date = st.date_input("Date", datetime.now())
     slip_no = st.text_input("Slip No.")
     party_name = st.selectbox("Party Name", sale_parties)
@@ -130,10 +130,10 @@ elif menu == "Sale Entry":
                 amount,
             ]
             add_to_sheet(sheet, data)
-        st.success("✅ Sale entry added successfully!")
+        st.success("✅ Sale added successfully!")
 
-elif menu == "Payment/Receipt Entry":
-    st.header("💳 Payment/Receipt Entry")
+elif menu == "Payment/Receipt":
+    st.header("💳 Payment/Receipt")
     date = st.date_input("Date", datetime.now())
     reference = st.text_input("Reference")
     slip_no = st.selectbox("Type", ["Cash", "Bank"])
@@ -169,7 +169,8 @@ elif menu == "Payment/Receipt Entry":
                 amount
             ]
             add_to_sheet(sheet, data)
-        st.success(f"✅ {voucher_type} entry added successfully!")
+        st.success(f"✅ {voucher_type} added successfully!")
+
 
 
 
