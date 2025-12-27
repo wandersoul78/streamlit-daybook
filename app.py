@@ -39,7 +39,7 @@ sheet = authenticate_gsheets(sheet_id, worksheet_name)
 # --- Predefined Party Names ---
 purchase_parties = ["Devansh", "Raj", "Bhr", "Samyak", "Aci"]
 sale_parties = ["Radha", "Pravesh", "Rc", "Mci", "Jawaharji", "Munishji", "Sanjay", "Narayan", "Drum"]
-additional_payment_parties = ["Papa", "Icici", "Fact Exp", "Home Exp", "Gst", "Ranjeet", "Bhure", "Raja", "Shivam", "Rajender"]
+additional_payment_parties = ["Papa", "Icici", "Fact Exp", "Home Exp", "Gst", "Ranjeet", "Bhure", "Raja", "Mukesh", "Rajender"]
 bank_parties = ["Icici"]
 
 # --- Predefined Items ---
@@ -170,6 +170,7 @@ elif menu == "Payment/Receipt Entry":
             ]
             add_to_sheet(sheet, data)
         st.success(f"✅ {voucher_type} entry added successfully!")
+
 
 
 
