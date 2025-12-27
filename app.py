@@ -63,15 +63,13 @@ if menu == "Purchase Entry":
 
         # GST and TCS
         gst_applied = st.checkbox(f"Apply GST for Item {i+1}", key=f"gst_{i}")
-        tcs_applied = st.checkbox(f"Apply TCS for Item {i+1}", key=f"tcs_{i}")
+        
 
         adjusted_rate = rate
         if gst_applied:
             gst_percent = st.number_input(f"GST Percent for Item {i+1}", min_value=0.0, step=0.1, key=f"gst_percent_{i}")
             adjusted_rate += round(rate * gst_percent / 100, 2)
-        if tcs_applied:
-            tcs_percent = st.number_input(f"TCS Percent for Item {i+1}", min_value=0.0, step=0.1, key=f"tcs_percent_{i}")
-            adjusted_rate += round(adjusted_rate * tcs_percent / 100, 2)
+        
 
         amount = quantity * adjusted_rate
         items.append((item_type, quantity, rate, adjusted_rate, amount))
@@ -107,15 +105,13 @@ elif menu == "Sale Entry":
         rate = st.number_input(f"Rate {i+1} (per kg)", min_value=0.0, step=0.1, key=f"rate_{i}")
 
         gst_applied = st.checkbox(f"Apply GST for Item {i+1}", key=f"gst_{i}")
-        tcs_applied = st.checkbox(f"Apply TCS for Item {i+1}", key=f"tcs_{i}")
+        
 
         adjusted_rate = rate
         if gst_applied:
             gst_percent = st.number_input(f"GST Percent for Item {i+1}", min_value=0.0, step=0.1, key=f"gst_percent_{i}")
             adjusted_rate += round(rate * gst_percent / 100, 2)
-        if tcs_applied:
-            tcs_percent = st.number_input(f"TCS Percent for Item {i+1}", min_value=0.0, step=0.1, key=f"tcs_percent_{i}")
-            adjusted_rate += round(adjusted_rate * tcs_percent / 100, 2)
+       
 
         amount = quantity * adjusted_rate
         items.append((item_type, quantity, rate, adjusted_rate, amount))
@@ -174,6 +170,7 @@ elif menu == "Payment/Receipt Entry":
             ]
             add_to_sheet(sheet, data)
         st.success(f"✅ {voucher_type} entry added successfully!")
+
 
 
 
