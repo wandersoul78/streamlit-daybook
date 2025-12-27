@@ -40,6 +40,7 @@ sheet = authenticate_gsheets(sheet_id, worksheet_name)
 purchase_parties = ["Devansh", "Raj", "Bhr", "Samyak", "Aci"]
 sale_parties = ["Radha", "Pravesh", "Rc", "Mci", "Jawaharji", "Munishji", "Sanjay", "Narayan", "Drum"]
 additional_payment_parties = ["Papa", "Icici", "Fact Exp", "Home Exp", "Gst", "Ranjeet", "Bhure", "Raja", "Shivam", "Rajender"]
+bank_parties = ["Icici"]
 
 # --- Predefined Items ---
 purchase_items = ["Resin", "C1000", "C001", "Cpw", "DOP", "Dbp", "Tbls", "Dblp", "Ls", "St", "Op304", "Op318", "Lqd", "Eva", "GST", "Tin"]
@@ -144,7 +145,10 @@ elif menu == "Payment/Receipt Entry":
     party_name = st.selectbox("Party Name", combined_parties)
     voucher_type = st.selectbox("Voucher Type", ["Payment", "Receipt"])
     amount = st.number_input("Amount", min_value=0.0, step=0.1)
-
+     # 👉 Show Bank selector only if Bank is chosen
+    bank_name = None
+    if slip_no == "Bank":
+        bank_name = st.selectbox("Bank Name", bank_parties)
     if st.button("Add Voucher"):
         data = [
             date.strftime("%m-%d-%Y"),
@@ -155,7 +159,22 @@ elif menu == "Payment/Receipt Entry":
             "", "", amount
         ]
         add_to_sheet(sheet, data)
+        # ---- BANK ENTRY (reverse) ----
+        if slip_no == "Bank":
+            reverse_type = "Receipt" if voucher_type == "Payment" else "Payment"
+            data = [
+                date.strftime("%m-%d-%Y"),
+                reference,
+                reverse_type,
+                bank_name,
+                "Bank",
+                "",
+                "",
+                amount
+            ]
+            add_to_sheet(sheet, data)
         st.success(f"✅ {voucher_type} entry added successfully!")
+
 
 
 
