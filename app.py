@@ -44,7 +44,7 @@ bank_parties = ["Icici"]
 
 # --- Predefined Items ---
 purchase_items = ["Resin", "C1000", "C001", "Cpw", "DOP", "Dbp", "Tbls", "Dblp", "Ls", "St", "Op304", "Op318", "Lqd", "Eva", "GST", "Tin"]
-sale_items = ["Ap25", "Ap50", "Ap5", "1800n", "Rbc", "Ap84", "L10", "L10dbp", "L20", "101n", "L2", "12dbp", "212n", "220n", "C3", "20n", "J20", "5dop","Dop12", "2n", "6n","115n","15n", "P94", "P90", "P02", "P23","P01", "Dt94","Dop-Al", "GST", "18n", "25s","Drm"]
+sale_items = ["Ap25", "Ap50", "Ap5", "1800n", "Rbc","RBDbp", "Ap84", "L10", "L10dbp", "L20", "101n", "L2", "12dbp", "212n", "220n", "C3", "20n", "J20", "5dop","Dop12", "2n", "6n","115n","15n", "P94", "P90", "P02", "P23","P01", "Dt94","Dop-Al", "GST", "18n", "25s","Drm"]
 
 # --- Menu Options ---
 if menu == "Purchase":
@@ -170,6 +170,7 @@ elif menu == "Payment/Receipt":
             ]
             add_to_sheet(sheet, data)
         st.success(f"✅ {voucher_type} added successfully!")
+
 
 
 
