@@ -487,7 +487,7 @@ def render_party_ledger():
             }
             df = pd.DataFrame([opening_row] + records)
             # Running balance: start from opening, then cumulative sum of net movements
-            running = opening_balance
+            running = 0.0
             balances = []
 
             for _, row in df.iterrows():
@@ -842,5 +842,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
