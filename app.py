@@ -165,11 +165,36 @@ def ensure_sheet_exists(sheet_name: str, headers: list[str]):
         ws.append_row(headers, value_input_option="USER_ENTERED")
 
 
+def _migrate_opening_balances_sheet():
+    """Migrate old 3-column Opening Balances sheet to 4-column (with Date)."""
+    try:
+        wb = get_workbook()
+        ws = wb.worksheet(OPENING_BAL_SHEET)
+        header = ws.row_values(1)
+        if header and "Date" not in header:
+            # Old format: Party Name, Debit, Credit → new: Party Name, Date, Debit, Credit
+            all_vals = ws.get_all_values()
+            # Clear and rewrite with new header
+            ws.clear()
+            ws.append_row(["Party Name", "Date", "Debit", "Credit"], value_input_option="USER_ENTERED")
+            default_date = date(date.today().year, 4, 1).strftime("%m-%d-%Y")
+            for row in all_vals[1:]:
+                if row and row[0]:
+                    name = row[0]
+                    dr = row[1] if len(row) > 1 else 0
+                    cr = row[2] if len(row) > 2 else 0
+                    ws.append_row([name, default_date, dr, cr], value_input_option="USER_ENTERED")
+            read_all_rows.clear()
+    except gspread.exceptions.WorksheetNotFound:
+        pass
+
+
 def seed_master_data():
     """One-time migration: populate Parties/Items sheets if they are empty."""
     ensure_sheet_exists(PARTIES_SHEET, ["Name", "Category"])
     ensure_sheet_exists(ITEMS_SHEET, ["Name", "Category"])
     ensure_sheet_exists(OPENING_BAL_SHEET, ["Party Name", "Date", "Debit", "Credit"])
+    _migrate_opening_balances_sheet()
 
     if len(read_all_values(PARTIES_SHEET)) <= 1:
         wb = get_workbook()
