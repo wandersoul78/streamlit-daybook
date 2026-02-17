@@ -172,21 +172,19 @@ def _migrate_opening_balances_sheet():
         ws = wb.worksheet(OPENING_BAL_SHEET)
         header = ws.row_values(1)
         if header and "Date" not in header:
-            # Old format: Party Name, Debit, Credit → new: Party Name, Date, Debit, Credit
             all_vals = ws.get_all_values()
-            # Clear and rewrite with new header
-            ws.clear()
-            ws.append_row(["Party Name", "Date", "Debit", "Credit"], value_input_option="USER_ENTERED")
             default_date = date(date.today().year, 4, 1).strftime("%m-%d-%Y")
+            new_rows = [["Party Name", "Date", "Debit", "Credit"]]
             for row in all_vals[1:]:
                 if row and row[0]:
-                    name = row[0]
                     dr = row[1] if len(row) > 1 else 0
                     cr = row[2] if len(row) > 2 else 0
-                    ws.append_row([name, default_date, dr, cr], value_input_option="USER_ENTERED")
+                    new_rows.append([row[0], default_date, dr, cr])
+            ws.clear()
+            ws.update(range_name="A1", values=new_rows, value_input_option="USER_ENTERED")
             read_all_rows.clear()
-    except gspread.exceptions.WorksheetNotFound:
-        pass
+    except Exception:
+        pass  # Don't crash app if migration fails
 
 
 def seed_master_data():
