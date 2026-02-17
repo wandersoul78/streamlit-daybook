@@ -396,8 +396,8 @@ def render_party_ledger():
 
             vtype = r.get("Voucher Type", r.get("Type", ""))
             amt = float(r.get("Amount", 0) or 0)
-            debit = amt if vtype in ("Purchase", "Payment") else 0.0
-            credit = amt if vtype in ("Sale", "Receipt") else 0.0
+            debit = amt if vtype in ("Sale", "Payment") else 0.0
+            credit = amt if vtype in ("Purchase", "Receipt") else 0.0
 
             # Transactions between OB date and start date add to opening balance
             if d < start_date:
@@ -566,10 +566,10 @@ def render_dashboard():
         st.subheader("Outstanding Balances")
         party_df = df.copy()
         party_df["Debit"] = party_df.apply(
-            lambda r: r[amt_col] if r[type_col] in ("Purchase", "Payment") else 0, axis=1
+            lambda r: r[amt_col] if r[type_col] in ("Sale", "Payment") else 0, axis=1
         )
         party_df["Credit"] = party_df.apply(
-            lambda r: r[amt_col] if r[type_col] in ("Sale", "Receipt") else 0, axis=1
+            lambda r: r[amt_col] if r[type_col] in ("Purchase", "Receipt") else 0, axis=1
         )
         summary = party_df.groupby(party_col)[["Debit", "Credit"]].sum()
         summary["Balance"] = summary["Debit"] - summary["Credit"]
@@ -781,3 +781,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
