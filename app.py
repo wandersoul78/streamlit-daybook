@@ -624,25 +624,25 @@ def render_dashboard():
     c4.metric("Receipts", f"{totals.get('Receipt', 0):,.2f}")
 
    if party_col:
-    st.subheader("Outstanding Balances")
+        st.subheader("Outstanding Balances")
 
-    all_parties = sorted(set(df[party_col]))
+        all_parties = sorted(set(df[party_col]))
 
-    final_summary = []
+        final_summary = []
 
-    for party in all_parties:
-        bal = calculate_party_balance(party)
-        if abs(bal) > 0.01:
-            final_summary.append({
-                "Party": party,
-                "Balance": bal
-            })
+        for party in all_parties:
+            bal = calculate_party_balance(party)
+            if abs(bal) > 0.01:
+                final_summary.append({
+                    "Party": party,
+                    "Balance": bal
+                })
 
-    if final_summary:
-        summary_df = pd.DataFrame(final_summary).sort_values("Balance", ascending=False)
-        st.dataframe(summary_df, use_container_width=True)
-    else:
-        st.info("No outstanding balances.")
+        if final_summary:
+            summary_df = pd.DataFrame(final_summary).sort_values("Balance", ascending=False)
+            st.dataframe(summary_df, use_container_width=True)
+        else:
+            st.info("No outstanding balances.")
 
 
 # ---------------------------------------------------------------------------
@@ -846,6 +846,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
