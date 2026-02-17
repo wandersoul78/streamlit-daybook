@@ -623,22 +623,26 @@ def render_dashboard():
     c3.metric("Payments", f"{totals.get('Payment', 0):,.2f}")
     c4.metric("Receipts", f"{totals.get('Receipt', 0):,.2f}")
 
-    if party_col:
-        st.subheader("Outstanding Balances")
-        party_df = df.copy()
-        party_df["Debit"] = party_df.apply(
-            lambda r: r[amt_col] if r[type_col] in ("Sale", "Payment") else 0, axis=1
-        )
-        party_df["Credit"] = party_df.apply(
-            lambda r: r[amt_col] if r[type_col] in ("Purchase", "Receipt") else 0, axis=1
-        )
-        summary = party_df.groupby(party_col)[["Debit", "Credit"]].sum()
-        summary["Balance"] = summary["Debit"] - summary["Credit"]
-        summary = summary[summary["Balance"].abs() > 0.01].sort_values("Balance", ascending=False)
-        st.dataframe(summary, use_container_width=True)
+   if party_col:
+    st.subheader("Outstanding Balances")
 
-    st.subheader("Recent Entries")
-    st.dataframe(df.tail(20).iloc[::-1], use_container_width=True)
+    all_parties = sorted(set(df[party_col]))
+
+    final_summary = []
+
+    for party in all_parties:
+        bal = calculate_party_balance(party)
+        if abs(bal) > 0.01:
+            final_summary.append({
+                "Party": party,
+                "Balance": bal
+            })
+
+    if final_summary:
+        summary_df = pd.DataFrame(final_summary).sort_values("Balance", ascending=False)
+        st.dataframe(summary_df, use_container_width=True)
+    else:
+        st.info("No outstanding balances.")
 
 
 # ---------------------------------------------------------------------------
@@ -842,6 +846,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
