@@ -623,7 +623,7 @@ def render_dashboard():
     c3.metric("Payments", f"{totals.get('Payment', 0):,.2f}")
     c4.metric("Receipts", f"{totals.get('Receipt', 0):,.2f}")
 
-   if party_col:
+    if party_col:
         st.subheader("Outstanding Balances")
 
         all_parties = sorted(set(df[party_col]))
@@ -846,6 +846,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
