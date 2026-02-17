@@ -73,7 +73,10 @@ def read_all_rows(worksheet_name: str) -> list[dict]:
     try:
         wb = get_workbook()
         ws = wb.worksheet(worksheet_name)
-        return ws.get_all_records()
+        records = ws.get_all_records()
+        return records if records else []
+    except gspread.exceptions.WorksheetNotFound:
+        return []
     except Exception as e:
         st.error(f"Error reading {worksheet_name}: {e}")
         return []
@@ -416,15 +419,21 @@ def render_party_ledger():
 
         # Build dataframe with opening balance row
         if opening_balance != 0 or records:
+            ob_dr = opening_balance if opening_balance > 0 else 0.0
+            ob_cr = abs(opening_balance) if opening_balance < 0 else 0.0
             opening_row = {
                 "Date": "", "Slip": "", "Type": "Opening Balance",
                 "Item": "", "Qty": "", "Rate": "",
-                "Debit": opening_balance if opening_balance > 0 else 0.0,
-                "Credit": abs(opening_balance) if opening_balance < 0 else 0.0,
+                "Debit": ob_dr, "Credit": ob_cr,
             }
             df = pd.DataFrame([opening_row] + records)
-            df["Balance"] = opening_balance + (df["Debit"] - df["Credit"]).iloc[1:].cumsum()
-            df.loc[df.index[0], "Balance"] = opening_balance
+            # Running balance: start from opening, then cumulative sum of net movements
+            balance = []
+            running = 0.0
+            for _, row in df.iterrows():
+                running += float(row["Debit"]) - float(row["Credit"])
+                balance.append(running)
+            df["Balance"] = balance
             st.session_state["ledger_df"] = df
             st.session_state["ledger_party"] = party
             st.session_state["ledger_range"] = f"{start_date} to {end_date}"
