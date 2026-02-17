@@ -121,6 +121,7 @@ def delete_row(worksheet_name: str, row_index: int):
 PARTIES_SHEET = "Parties"
 ITEMS_SHEET = "Items"
 DAYBOOK_SHEET = "Daybook"
+OPENING_BAL_SHEET = "Opening Balances"
 
 # Default seed data (migrated from the old hardcoded lists)
 DEFAULT_PARTIES = [
@@ -168,6 +169,7 @@ def seed_master_data():
     """One-time migration: populate Parties/Items sheets if they are empty."""
     ensure_sheet_exists(PARTIES_SHEET, ["Name", "Category"])
     ensure_sheet_exists(ITEMS_SHEET, ["Name", "Category"])
+    ensure_sheet_exists(OPENING_BAL_SHEET, ["Party Name", "Debit", "Credit"])
 
     if len(read_all_values(PARTIES_SHEET)) <= 1:
         wb = get_workbook()
@@ -180,6 +182,17 @@ def seed_master_data():
         ws = wb.worksheet(ITEMS_SHEET)
         ws.append_rows([[n, c] for n, c in DEFAULT_ITEMS], value_input_option="USER_ENTERED")
         read_all_rows.clear()
+
+
+def get_opening_balance(party_name: str) -> float:
+    """Return stored opening balance for a party (Debit - Credit)."""
+    rows = read_all_rows(OPENING_BAL_SHEET)
+    for r in rows:
+        if r.get("Party Name", "") == party_name:
+            dr = float(r.get("Debit", 0) or 0)
+            cr = float(r.get("Credit", 0) or 0)
+            return dr - cr
+    return 0.0
 
 
 @st.cache_data(ttl=300)
@@ -312,7 +325,8 @@ def render_party_ledger():
 
     if st.button("Load Ledger", key="led_load"):
         rows = read_all_rows(DAYBOOK_SHEET)
-        opening_balance = 0.0
+        # Start with stored opening balance from Opening Balances sheet
+        opening_balance = get_opening_balance(party)
         records = []
         for r in rows:
             if r.get("Party Name", r.get("Party", "")) != party:
@@ -508,7 +522,7 @@ def render_dashboard():
 # ---------------------------------------------------------------------------
 def render_master_data():
     st.header("Master Data")
-    tab1, tab2 = st.tabs(["Parties", "Items"])
+    tab1, tab2, tab3 = st.tabs(["Parties", "Items", "Opening Balances"])
 
     with tab1:
         _master_data_tab(PARTIES_SHEET, "Party", ["Name", "Category"],
@@ -516,6 +530,8 @@ def render_master_data():
     with tab2:
         _master_data_tab(ITEMS_SHEET, "Item", ["Name", "Category"],
                          category_options=["Purchase", "Sale"])
+    with tab3:
+        _opening_balances_tab()
 
 
 def _master_data_tab(sheet_name: str, label: str, headers: list[str],
@@ -578,6 +594,86 @@ def _master_data_tab(sheet_name: str, label: str, headers: list[str],
                 st.rerun()
         else:
             st.warning("Name cannot be empty.")
+
+
+def _opening_balances_tab():
+    """Manage opening balances per party in a separate sheet."""
+    all_vals = read_all_values(OPENING_BAL_SHEET)
+    header = all_vals[0] if all_vals else ["Party Name", "Debit", "Credit"]
+    data_rows = all_vals[1:] if len(all_vals) > 1 else []
+
+    # Build a lookup of existing parties with opening balances
+    existing = {}
+    for idx, row in enumerate(data_rows):
+        name = row[0] if len(row) > 0 else ""
+        if name:
+            existing[name] = idx  # index in data_rows
+
+    # Show existing opening balances
+    if data_rows:
+        st.subheader("Current Opening Balances")
+        display = []
+        for row in data_rows:
+            name = row[0] if len(row) > 0 else ""
+            dr = float(row[1]) if len(row) > 1 and row[1] else 0.0
+            cr = float(row[2]) if len(row) > 2 and row[2] else 0.0
+            bal = dr - cr
+            bal_type = "Dr" if bal >= 0 else "Cr"
+            display.append({
+                "Party Name": name,
+                "Debit": dr,
+                "Credit": cr,
+                "Balance": f"{abs(bal):,.2f} {bal_type}",
+            })
+        st.dataframe(pd.DataFrame(display), use_container_width=True)
+
+    # Edit / Add opening balance
+    st.subheader("Set Opening Balance")
+    all_parties = sorted(set(get_parties()))
+    if not all_parties:
+        st.info("No parties found. Add parties first.")
+        return
+
+    party = st.selectbox("Party", all_parties, key="ob_party")
+    col1, col2 = st.columns(2)
+    # Pre-fill if party already has an opening balance
+    prefill_dr, prefill_cr = 0.0, 0.0
+    if party in existing:
+        row = data_rows[existing[party]]
+        prefill_dr = float(row[1]) if len(row) > 1 and row[1] else 0.0
+        prefill_cr = float(row[2]) if len(row) > 2 and row[2] else 0.0
+    with col1:
+        debit = st.number_input("Debit (they owe you)", min_value=0.0, step=0.1,
+                                value=prefill_dr, key="ob_dr")
+    with col2:
+        credit = st.number_input("Credit (you owe them)", min_value=0.0, step=0.1,
+                                 value=prefill_cr, key="ob_cr")
+
+    if st.button("Save Opening Balance", key="ob_save"):
+        if party in existing:
+            # Update existing row (row_num = index + 2 because header is row 1)
+            row_num = existing[party] + 2
+            if update_row(OPENING_BAL_SHEET, row_num, [party, debit, credit]):
+                st.success(f"Opening balance updated for {party}.")
+                read_all_rows.clear()
+                st.rerun()
+        else:
+            # Add new row
+            if append_row(OPENING_BAL_SHEET, [party, debit, credit]):
+                st.success(f"Opening balance saved for {party}.")
+                read_all_rows.clear()
+                st.rerun()
+
+    # Delete option
+    if data_rows:
+        st.subheader("Remove Opening Balance")
+        del_party = st.selectbox("Select party to remove", list(existing.keys()), key="ob_del_party")
+        if st.button("Remove", key="ob_del"):
+            row_num = existing[del_party] + 2
+            if delete_row(OPENING_BAL_SHEET, row_num):
+                st.success(f"Opening balance removed for {del_party}.")
+                read_all_rows.clear()
+                st.rerun()
 
 
 # ---------------------------------------------------------------------------
