@@ -169,7 +169,7 @@ def seed_master_data():
     """One-time migration: populate Parties/Items sheets if they are empty."""
     ensure_sheet_exists(PARTIES_SHEET, ["Name", "Category"])
     ensure_sheet_exists(ITEMS_SHEET, ["Name", "Category"])
-    ensure_sheet_exists(OPENING_BAL_SHEET, ["Party Name", "Debit", "Credit"])
+    ensure_sheet_exists(OPENING_BAL_SHEET, ["Party Name", "Date", "Debit", "Credit"])
 
     if len(read_all_values(PARTIES_SHEET)) <= 1:
         wb = get_workbook()
@@ -184,15 +184,26 @@ def seed_master_data():
         read_all_rows.clear()
 
 
-def get_opening_balance(party_name: str) -> float:
-    """Return stored opening balance for a party (Debit - Credit)."""
+def get_opening_balance(party_name: str, start_date: date) -> tuple[float, bool]:
+    """Return stored opening balance for a party if its date <= start_date.
+
+    Returns (balance, found) where balance = Debit - Credit.
+    Only applied if the opening balance date falls on or before start_date.
+    """
     rows = read_all_rows(OPENING_BAL_SHEET)
     for r in rows:
         if r.get("Party Name", "") == party_name:
+            ob_date_str = r.get("Date", "")
+            try:
+                ob_date = datetime.strptime(ob_date_str, "%m-%d-%Y").date()
+            except (ValueError, TypeError):
+                ob_date = None
+            if ob_date and ob_date > start_date:
+                return 0.0, False
             dr = float(r.get("Debit", 0) or 0)
             cr = float(r.get("Credit", 0) or 0)
-            return dr - cr
-    return 0.0
+            return dr - cr, True
+    return 0.0, False
 
 
 @st.cache_data(ttl=300)
@@ -325,8 +336,22 @@ def render_party_ledger():
 
     if st.button("Load Ledger", key="led_load"):
         rows = read_all_rows(DAYBOOK_SHEET)
-        # Start with stored opening balance from Opening Balances sheet
-        opening_balance = get_opening_balance(party)
+        # Start with stored opening balance (only if its date <= start_date)
+        stored_bal, has_ob = get_opening_balance(party, start_date)
+        opening_balance = stored_bal
+
+        # Get the opening balance date to skip daybook entries before it
+        ob_date = None
+        if has_ob:
+            ob_rows = read_all_rows(OPENING_BAL_SHEET)
+            for r in ob_rows:
+                if r.get("Party Name", "") == party:
+                    try:
+                        ob_date = datetime.strptime(r.get("Date", ""), "%m-%d-%Y").date()
+                    except (ValueError, TypeError):
+                        pass
+                    break
+
         records = []
         for r in rows:
             if r.get("Party Name", r.get("Party", "")) != party:
@@ -337,12 +362,17 @@ def render_party_ledger():
             except (ValueError, TypeError):
                 continue
 
+            # Skip transactions on or before the opening balance date
+            # (they are already included in the stored balance)
+            if ob_date and d < ob_date:
+                continue
+
             vtype = r.get("Voucher Type", r.get("Type", ""))
             amt = float(r.get("Amount", 0) or 0)
             debit = amt if vtype in ("Purchase", "Payment") else 0.0
             credit = amt if vtype in ("Sale", "Receipt") else 0.0
 
-            # Transactions before start date contribute to opening balance
+            # Transactions between OB date and start date add to opening balance
             if d < start_date:
                 opening_balance += debit - credit
                 continue
@@ -599,7 +629,6 @@ def _master_data_tab(sheet_name: str, label: str, headers: list[str],
 def _opening_balances_tab():
     """Manage opening balances per party in a separate sheet."""
     all_vals = read_all_values(OPENING_BAL_SHEET)
-    header = all_vals[0] if all_vals else ["Party Name", "Debit", "Credit"]
     data_rows = all_vals[1:] if len(all_vals) > 1 else []
 
     # Build a lookup of existing parties with opening balances
@@ -607,7 +636,7 @@ def _opening_balances_tab():
     for idx, row in enumerate(data_rows):
         name = row[0] if len(row) > 0 else ""
         if name:
-            existing[name] = idx  # index in data_rows
+            existing[name] = idx
 
     # Show existing opening balances
     if data_rows:
@@ -615,12 +644,14 @@ def _opening_balances_tab():
         display = []
         for row in data_rows:
             name = row[0] if len(row) > 0 else ""
-            dr = float(row[1]) if len(row) > 1 and row[1] else 0.0
-            cr = float(row[2]) if len(row) > 2 and row[2] else 0.0
+            ob_date = row[1] if len(row) > 1 else ""
+            dr = float(row[2]) if len(row) > 2 and row[2] else 0.0
+            cr = float(row[3]) if len(row) > 3 and row[3] else 0.0
             bal = dr - cr
             bal_type = "Dr" if bal >= 0 else "Cr"
             display.append({
                 "Party Name": name,
+                "Date": ob_date,
                 "Debit": dr,
                 "Credit": cr,
                 "Balance": f"{abs(bal):,.2f} {bal_type}",
@@ -635,13 +666,22 @@ def _opening_balances_tab():
         return
 
     party = st.selectbox("Party", all_parties, key="ob_party")
-    col1, col2 = st.columns(2)
+
     # Pre-fill if party already has an opening balance
+    prefill_date = date(date.today().year, 4, 1)
     prefill_dr, prefill_cr = 0.0, 0.0
     if party in existing:
         row = data_rows[existing[party]]
-        prefill_dr = float(row[1]) if len(row) > 1 and row[1] else 0.0
-        prefill_cr = float(row[2]) if len(row) > 2 and row[2] else 0.0
+        try:
+            prefill_date = datetime.strptime(row[1], "%m-%d-%Y").date() if len(row) > 1 and row[1] else prefill_date
+        except (ValueError, TypeError):
+            pass
+        prefill_dr = float(row[2]) if len(row) > 2 and row[2] else 0.0
+        prefill_cr = float(row[3]) if len(row) > 3 and row[3] else 0.0
+
+    ob_date = st.date_input("Balance as on date", value=prefill_date, key="ob_date",
+                            help="Transactions before this date are assumed included in this balance")
+    col1, col2 = st.columns(2)
     with col1:
         debit = st.number_input("Debit (they owe you)", min_value=0.0, step=0.1,
                                 value=prefill_dr, key="ob_dr")
@@ -650,17 +690,16 @@ def _opening_balances_tab():
                                  value=prefill_cr, key="ob_cr")
 
     if st.button("Save Opening Balance", key="ob_save"):
+        date_str = ob_date.strftime("%m-%d-%Y")
         if party in existing:
-            # Update existing row (row_num = index + 2 because header is row 1)
             row_num = existing[party] + 2
-            if update_row(OPENING_BAL_SHEET, row_num, [party, debit, credit]):
-                st.success(f"Opening balance updated for {party}.")
+            if update_row(OPENING_BAL_SHEET, row_num, [party, date_str, debit, credit]):
+                st.success(f"Opening balance updated for {party} as on {ob_date}.")
                 read_all_rows.clear()
                 st.rerun()
         else:
-            # Add new row
-            if append_row(OPENING_BAL_SHEET, [party, debit, credit]):
-                st.success(f"Opening balance saved for {party}.")
+            if append_row(OPENING_BAL_SHEET, [party, date_str, debit, credit]):
+                st.success(f"Opening balance saved for {party} as on {ob_date}.")
                 read_all_rows.clear()
                 st.rerun()
 
