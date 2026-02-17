@@ -23,6 +23,7 @@ def get_gspread_client():
     return gspread.authorize(creds)
 
 
+@st.cache_resource
 def get_workbook():
     client = get_gspread_client()
     return client.open_by_key(st.secrets["sheets"]["sheet_id"])
@@ -753,7 +754,9 @@ def _opening_balances_tab():
 def main():
     st.set_page_config(page_title="ERP Data Entry", layout="wide")
 
-    seed_master_data()
+    if "seeded" not in st.session_state:
+        seed_master_data()
+        st.session_state["seeded"] = True
 
     st.sidebar.title("Menu")
     menu = st.sidebar.radio(
