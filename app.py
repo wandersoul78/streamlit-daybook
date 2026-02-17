@@ -248,6 +248,64 @@ def get_items(category: str = "") -> list[str]:
         return sorted({r["Name"] for r in rows if r.get("Category") == category})
     return sorted({r["Name"] for r in rows})
 
+def calculate_party_balance(party: str, upto_date: date = None) -> float:
+    """
+    Calculate final balance for a party till a given date.
+    If upto_date is None → calculates till today.
+    Logic:
+    Sale + Payment  → Debit
+    Purchase + Receipt → Credit
+    Balance = Debit - Credit
+    """
+
+    if upto_date is None:
+        upto_date = date.today()
+
+    rows = read_all_rows(DAYBOOK_SHEET)
+
+    # Start with stored opening balance
+    opening_balance, has_ob = get_opening_balance(party, upto_date)
+    balance = opening_balance
+
+    # Get OB date to skip earlier entries
+    ob_date = None
+    if has_ob:
+        ob_rows = read_all_rows(OPENING_BAL_SHEET)
+        for r in ob_rows:
+            if r.get("Party Name", "") == party:
+                try:
+                    ob_date = datetime.strptime(r.get("Date", ""), "%m-%d-%Y").date()
+                except:
+                    pass
+                break
+
+    for r in rows:
+        if r.get("Party Name", r.get("Party", "")) != party:
+            continue
+
+        try:
+            d = datetime.strptime(r.get("Date", ""), "%m-%d-%Y").date()
+        except:
+            continue
+
+        # Skip entries before OB date (already included)
+        if ob_date and d < ob_date:
+            continue
+
+        if d > upto_date:
+            continue
+
+        vtype = r.get("Voucher Type", r.get("Type", ""))
+        amt = float(r.get("Amount", 0) or 0)
+
+        # YOUR REQUIRED LOGIC
+        if vtype in ("Sale", "Payment"):
+            balance += amt
+        elif vtype in ("Purchase", "Receipt"):
+            balance -= amt
+
+    return balance
+
 
 # ---------------------------------------------------------------------------
 # 4. Unified Entry Form (Purchase / Sale)
@@ -429,12 +487,15 @@ def render_party_ledger():
             }
             df = pd.DataFrame([opening_row] + records)
             # Running balance: start from opening, then cumulative sum of net movements
-            balance = []
-            running = 0.0
+            running = opening_balance
+            balances = []
+
             for _, row in df.iterrows():
                 running += float(row["Debit"]) - float(row["Credit"])
-                balance.append(running)
-            df["Balance"] = balance
+                balances.append(running)
+
+            df["Balance"] = balances
+
             st.session_state["ledger_df"] = df
             st.session_state["ledger_party"] = party
             st.session_state["ledger_range"] = f"{start_date} to {end_date}"
@@ -781,4 +842,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
