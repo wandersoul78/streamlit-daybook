@@ -312,6 +312,7 @@ def render_party_ledger():
 
     if st.button("Load Ledger", key="led_load"):
         rows = read_all_rows(DAYBOOK_SHEET)
+        opening_balance = 0.0
         records = []
         for r in rows:
             if r.get("Party Name", r.get("Party", "")) != party:
@@ -321,33 +322,48 @@ def render_party_ledger():
                 d = datetime.strptime(raw_date, "%m-%d-%Y").date()
             except (ValueError, TypeError):
                 continue
-            if not (start_date <= d <= end_date):
-                continue
 
             vtype = r.get("Voucher Type", r.get("Type", ""))
             amt = float(r.get("Amount", 0) or 0)
+            debit = amt if vtype in ("Purchase", "Payment") else 0.0
+            credit = amt if vtype in ("Sale", "Receipt") else 0.0
+
+            # Transactions before start date contribute to opening balance
+            if d < start_date:
+                opening_balance += debit - credit
+                continue
+
+            if d > end_date:
+                continue
+
             item = r.get("Item", "")
             qty = r.get("Quantity", r.get("Qty", ""))
             rate = r.get("Rate", "")
             slip = r.get("Slip No.", r.get("Slip No", r.get("Reference", "")))
 
-            debit = amt if vtype in ("Purchase", "Payment") else 0.0
-            credit = amt if vtype in ("Sale", "Receipt") else 0.0
             records.append({
                 "Date": raw_date, "Slip": slip, "Type": vtype,
                 "Item": item, "Qty": qty, "Rate": rate,
                 "Debit": debit, "Credit": credit,
             })
 
-        if not records:
-            st.info("No entries found for the selected party and date range.")
+        # Build dataframe with opening balance row
+        if opening_balance != 0 or records:
+            opening_row = {
+                "Date": "", "Slip": "", "Type": "Opening Balance",
+                "Item": "", "Qty": "", "Rate": "",
+                "Debit": opening_balance if opening_balance > 0 else 0.0,
+                "Credit": abs(opening_balance) if opening_balance < 0 else 0.0,
+            }
+            df = pd.DataFrame([opening_row] + records)
+            df["Balance"] = opening_balance + (df["Debit"] - df["Credit"]).iloc[1:].cumsum()
+            df.loc[df.index[0], "Balance"] = opening_balance
+            st.session_state["ledger_df"] = df
+            st.session_state["ledger_party"] = party
+            st.session_state["ledger_range"] = f"{start_date} to {end_date}"
+        else:
+            st.info("No entries found for the selected party.")
             return
-
-        df = pd.DataFrame(records)
-        df["Balance"] = (df["Debit"] - df["Credit"]).cumsum()
-        st.session_state["ledger_df"] = df
-        st.session_state["ledger_party"] = party
-        st.session_state["ledger_range"] = f"{start_date} to {end_date}"
 
     if "ledger_df" in st.session_state:
         df = st.session_state["ledger_df"]
