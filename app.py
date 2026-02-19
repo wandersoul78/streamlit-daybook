@@ -615,13 +615,7 @@ def render_dashboard():
         return
 
     df[amt_col] = pd.to_numeric(df[amt_col], errors="coerce").fillna(0)
-    totals = df.groupby(type_col)[amt_col].sum()
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Purchases", f"{totals.get('Purchase', 0):,.2f}")
-    c2.metric("Sales", f"{totals.get('Sale', 0):,.2f}")
-    c3.metric("Payments", f"{totals.get('Payment', 0):,.2f}")
-    c4.metric("Receipts", f"{totals.get('Receipt', 0):,.2f}")
+ 
 
     if party_col:
         st.subheader("Outstanding Balances")
@@ -846,6 +840,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
