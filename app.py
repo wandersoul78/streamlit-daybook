@@ -487,9 +487,14 @@ def render_party_ledger():
             }
             df = pd.DataFrame([opening_row] + records)
 
-            # SORT
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-            df = df.sort_values("Date").reset_index(drop=True)
+           # Separate OB
+            opening_df = df.iloc[[0]]
+            transactions_df = df.iloc[1:].copy()
+            
+            transactions_df["Date"] = pd.to_datetime(transactions_df["Date"], errors="coerce")
+            transactions_df = transactions_df.sort_values("Date")
+            
+            df = pd.concat([opening_df, transactions_df]).reset_index(drop=True)
             # Running balance: start from opening, then cumulative sum of net movements
             running = 0.0
             balances = []
@@ -844,6 +849,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
