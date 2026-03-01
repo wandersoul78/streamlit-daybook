@@ -486,6 +486,10 @@ def render_party_ledger():
                 "Debit": ob_dr, "Credit": ob_cr,
             }
             df = pd.DataFrame([opening_row] + records)
+
+            # SORT
+            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+            df = df.sort_values("Date").reset_index(drop=True)
             # Running balance: start from opening, then cumulative sum of net movements
             running = 0.0
             balances = []
@@ -840,6 +844,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
