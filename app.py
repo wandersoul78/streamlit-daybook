@@ -137,7 +137,7 @@ DEFAULT_PARTIES = [
     ("Papa", "Payment"), ("Fact Exp", "Payment"), ("Home Exp", "Payment"),
     ("Gst", "Payment"), ("Ranjeet", "Payment"), ("Bhure", "Payment"),
     ("Raja", "Payment"), ("Mukesh", "Payment"), ("Rajender", "Payment"),
-    ("Icici", "Bank"),
+    ("Icici", "Bank"),("Cash","Cash"),
 ]
 
 DEFAULT_ITEMS = [
@@ -374,7 +374,7 @@ def render_payment_receipt():
     mode = st.selectbox("Type", ["Cash", "Bank"], key="pr_mode")
 
     all_parties = sorted(
-        set(get_parties("Purchase") + get_parties("Sale") + get_parties("Payment") + get_parties("Bank"))
+        set(get_parties("Purchase") + get_parties("Sale") + get_parties("Payment") + get_parties("Bank")+get_parties("Cash")
     )
     if not all_parties:
         st.warning("No parties found. Add them in Master Data.")
@@ -383,19 +383,34 @@ def render_payment_receipt():
     voucher_type = st.selectbox("Voucher Type", ["Payment", "Receipt"], key="pr_vtype")
     amount = st.number_input("Amount", min_value=0.0, step=0.1, key="pr_amt")
 
-    bank_name = None
+    ledger_name = None
     if mode == "Bank":
         bank_parties = get_parties("Bank")
         if bank_parties:
-            bank_name = st.selectbox("Bank Name", bank_parties, key="pr_bank")
+            ledger_name = st.selectbox("Bank Name", bank_parties, key="pr_bank")
         else:
             st.warning("No bank parties found. Add one in Master Data with category 'Bank'.")
-
+    elif mode == "Cash":
+        cash_parties = get_parties("Cash")
+        if cash_parties:
+            ledger_name = st.selectbox("Cash Account", cash_parties, key="pr_cash")
+        else:
+            st.warning("No cash ledger found. Add one in Master Data with category 'Cash'.")
     if st.button("Add Voucher", key="pr_submit"):
         rows = [[date_val.strftime("%m-%d-%Y"), reference, voucher_type, party_name, mode, 0, 0, amount]]
-        if mode == "Bank" and bank_name:
+        if ledger_name:
             reverse = "Receipt" if voucher_type == "Payment" else "Payment"
-            rows.append([date_val.strftime("%m-%d-%Y"), reference, reverse, bank_name, "Bank", 0, 0, amount])
+            rows.append([
+                date_val.strftime("%m-%d-%Y"),
+                reference,
+                reverse,
+                ledger_name,
+                mode,
+                0,
+                0,
+                amount
+            ])
+           
         if append_rows_batch(DAYBOOK_SHEET, rows):
             st.success(f"{voucher_type} entry added successfully!")
             read_all_rows.clear()
@@ -657,7 +672,7 @@ def render_master_data():
 
     with tab1:
         _master_data_tab(PARTIES_SHEET, "Party", ["Name", "Category"],
-                         category_options=["Purchase", "Sale", "Payment", "Bank"])
+                         category_options=["Purchase", "Sale", "Payment", "Bank","Cash"])
     with tab2:
         _master_data_tab(ITEMS_SHEET, "Item", ["Name", "Category"],
                          category_options=["Purchase", "Sale"])
