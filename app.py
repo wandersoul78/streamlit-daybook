@@ -124,7 +124,7 @@ def delete_row(worksheet_name: str, row_index: int):
 # ---------------------------------------------------------------------------
 PARTIES_SHEET = "Parties"
 ITEMS_SHEET = "Items"
-DAYBOOK_SHEET = "Daybook"
+DAYBOOK_SHEET = "Daybook_FY26"
 OPENING_BAL_SHEET = "Opening Balances"
 
 # Default seed data (migrated from the old hardcoded lists)
