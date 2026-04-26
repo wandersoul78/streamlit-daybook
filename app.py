@@ -10,6 +10,7 @@ import time
 # ---------------------------------------------------------------------------
 # 1. Authentication & Google Sheets connection
 # ---------------------------------------------------------------------------
+
 SCOPES = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive",
@@ -32,6 +33,8 @@ def get_workbook():
 # ---------------------------------------------------------------------------
 # 2. Sheet helpers — with batch writes & retry
 # ---------------------------------------------------------------------------
+
+
 def append_row(worksheet_name: str, row_data: list, retries: int = 2):
     for attempt in range(retries + 1):
         try:
@@ -122,6 +125,7 @@ def delete_row(worksheet_name: str, row_index: int):
 # ---------------------------------------------------------------------------
 # 3. Master-data helpers
 # ---------------------------------------------------------------------------
+
 PARTIES_SHEET = "Parties"
 ITEMS_SHEET = "Items"
 DAYBOOK_SHEET = "Daybook_FY26"
@@ -129,33 +133,85 @@ OPENING_BAL_SHEET = "Opening Balances"
 
 # Default seed data (migrated from the old hardcoded lists)
 DEFAULT_PARTIES = [
-    ("Devansh", "Purchase"), ("Raj", "Purchase"), ("Bhr", "Purchase"),
-    ("Samyak", "Purchase"), ("Aci", "Purchase"),
-    ("Radha", "Sale"), ("Pravesh", "Sale"), ("Rc", "Sale"),
-    ("Mci", "Sale"), ("Jawaharji", "Sale"), ("Munishji", "Sale"),
-    ("Sanjay", "Sale"), ("Narayan", "Sale"), ("Drum", "Sale"),
-    ("Papa", "Payment"), ("Fact Exp", "Payment"), ("Home Exp", "Payment"),
-    ("Gst", "Payment"), ("Ranjeet", "Payment"), ("Bhure", "Payment"),
-    ("Raja", "Payment"), ("Mukesh", "Payment"), ("Rajender", "Payment"),
-    ("Icici", "Bank"),("Cash","Cash"),
+    ("Devansh", "Purchase"),
+    ("Raj", "Purchase"),
+    ("Bhr", "Purchase"),
+    ("Samyak", "Purchase"),
+    ("Aci", "Purchase"),
+    ("Radha", "Sale"),
+    ("Pravesh", "Sale"),
+    ("Rc", "Sale"),
+    ("Mci", "Sale"),
+    ("Jawaharji", "Sale"),
+    ("Munishji", "Sale"),
+    ("Sanjay", "Sale"),
+    ("Narayan", "Sale"),
+    ("Drum", "Sale"),
+    ("Papa", "Payment"),
+    ("Fact Exp", "Payment"),
+    ("Home Exp", "Payment"),
+    ("Gst", "Payment"),
+    ("Ranjeet", "Payment"),
+    ("Bhure", "Payment"),
+    ("Raja", "Payment"),
+    ("Mukesh", "Payment"),
+    ("Rajender", "Payment"),
+    ("Cash", "Bank"),  # Added Cash account
+    ("Icici", "Bank"),
 ]
 
 DEFAULT_ITEMS = [
-    ("Resin", "Purchase"), ("C1000", "Purchase"), ("C001", "Purchase"),
-    ("Cpw", "Purchase"), ("DOP", "Purchase"), ("Dbp", "Purchase"),
-    ("Tbls", "Purchase"), ("Dblp", "Purchase"), ("Ls", "Purchase"),
-    ("St", "Purchase"), ("Op304", "Purchase"), ("Op318", "Purchase"),
-    ("Lqd", "Purchase"), ("Eva", "Purchase"), ("GST", "Purchase"),
+    ("Resin", "Purchase"),
+    ("C1000", "Purchase"),
+    ("C001", "Purchase"),
+    ("Cpw", "Purchase"),
+    ("DOP", "Purchase"),
+    ("Dbp", "Purchase"),
+    ("Tbls", "Purchase"),
+    ("Dblp", "Purchase"),
+    ("Ls", "Purchase"),
+    ("St", "Purchase"),
+    ("Op304", "Purchase"),
+    ("Op318", "Purchase"),
+    ("Lqd", "Purchase"),
+    ("Eva", "Purchase"),
+    ("GST", "Purchase"),
     ("Tin", "Purchase"),
-    ("Ap25", "Sale"), ("Ap50", "Sale"), ("Ap5", "Sale"), ("1800n", "Sale"),
-    ("Rbc", "Sale"), ("RBDbp", "Sale"), ("Ap84", "Sale"), ("L10", "Sale"),
-    ("L10dbp", "Sale"), ("L20", "Sale"), ("101n", "Sale"), ("L2", "Sale"),
-    ("12dbp", "Sale"), ("212n", "Sale"), ("220n", "Sale"), ("C3", "Sale"),
-    ("20n", "Sale"), ("J20", "Sale"), ("5dop", "Sale"), ("Dop12", "Sale"),
-    ("2n", "Sale"), ("6n", "Sale"), ("115n", "Sale"), ("15n", "Sale"),
-    ("P94", "Sale"), ("P90", "Sale"), ("P02", "Sale"), ("P23", "Sale"),
-    ("P01", "Sale"), ("Dt94", "Sale"), ("Dop-Al", "Sale"), ("GST", "Sale"),
-    ("18n", "Sale"), ("25s", "Sale"), ("Drm", "Sale"),
+    ("Ap25", "Sale"),
+    ("Ap50", "Sale"),
+    ("Ap5", "Sale"),
+    ("1800n", "Sale"),
+    ("Rbc", "Sale"),
+    ("RBDbp", "Sale"),
+    ("Ap84", "Sale"),
+    ("L10", "Sale"),
+    ("L10dbp", "Sale"),
+    ("L20", "Sale"),
+    ("101n", "Sale"),
+    ("L2", "Sale"),
+    ("12dbp", "Sale"),
+    ("212n", "Sale"),
+    ("220n", "Sale"),
+    ("C3", "Sale"),
+    ("20n", "Sale"),
+    ("J20", "Sale"),
+    ("5dop", "Sale"),
+    ("Dop12", "Sale"),
+    ("2n", "Sale"),
+    ("6n", "Sale"),
+    ("115n", "Sale"),
+    ("15n", "Sale"),
+    ("P94", "Sale"),
+    ("P90", "Sale"),
+    ("P02", "Sale"),
+    ("P23", "Sale"),
+    ("P01", "Sale"),
+    ("Dt94", "Sale"),
+    ("Dop-Al", "Sale"),
+    ("GST", "Sale"),
+    ("18n", "Sale"),
+    ("25s", "Sale"),
+    ("Drm", "Sale"),
 ]
 
 
@@ -196,6 +252,7 @@ def seed_master_data():
     ensure_sheet_exists(PARTIES_SHEET, ["Name", "Category"])
     ensure_sheet_exists(ITEMS_SHEET, ["Name", "Category"])
     ensure_sheet_exists(OPENING_BAL_SHEET, ["Party Name", "Date", "Debit", "Credit"])
+
     _migrate_opening_balances_sheet()
 
     if len(read_all_values(PARTIES_SHEET)) <= 1:
@@ -213,7 +270,6 @@ def seed_master_data():
 
 def get_opening_balance(party_name: str, start_date: date) -> tuple[float, bool]:
     """Return stored opening balance for a party if its date <= start_date.
-
     Returns (balance, found) where balance = Debit - Credit.
     Only applied if the opening balance date falls on or before start_date.
     """
@@ -225,8 +281,10 @@ def get_opening_balance(party_name: str, start_date: date) -> tuple[float, bool]
                 ob_date = datetime.strptime(ob_date_str, "%m-%d-%Y").date()
             except (ValueError, TypeError):
                 ob_date = None
+
             if ob_date and ob_date > start_date:
                 return 0.0, False
+
             dr = float(r.get("Debit", 0) or 0)
             cr = float(r.get("Credit", 0) or 0)
             return dr - cr, True
@@ -248,16 +306,17 @@ def get_items(category: str = "") -> list[str]:
         return sorted({r["Name"] for r in rows if r.get("Category") == category})
     return sorted({r["Name"] for r in rows})
 
+
 def calculate_party_balance(party: str, upto_date: date = None) -> float:
     """
     Calculate final balance for a party till a given date.
     If upto_date is None → calculates till today.
+
     Logic:
-    Sale + Payment  → Debit
+    Sale + Payment → Debit
     Purchase + Receipt → Credit
     Balance = Debit - Credit
     """
-
     if upto_date is None:
         upto_date = date.today()
 
@@ -310,19 +369,23 @@ def calculate_party_balance(party: str, upto_date: date = None) -> float:
 # ---------------------------------------------------------------------------
 # 4. Unified Entry Form (Purchase / Sale)
 # ---------------------------------------------------------------------------
+
+
 def render_entry_form(entry_type: str):
     st.header(f"{entry_type} Entry")
-    cat = entry_type
 
+    cat = entry_type
     date_val = st.date_input("Date", datetime.now(), key=f"{cat}_date")
     slip_no = st.text_input("Slip No.", key=f"{cat}_slip")
+
     parties = get_parties(cat)
     if not parties:
         st.warning(f"No parties found for category '{cat}'. Add them in Master Data.")
         return
-    party_name = st.selectbox("Party Name", parties, key=f"{cat}_party")
 
+    party_name = st.selectbox("Party Name", parties, key=f"{cat}_party")
     num_items = st.number_input("Number of Items", min_value=1, step=1, value=1, key=f"{cat}_num")
+
     items_list = get_items(cat)
     collected = []
 
@@ -331,10 +394,10 @@ def render_entry_form(entry_type: str):
         if not items_list:
             st.warning("No items found. Add them in Master Data.")
             return
+
         item_type = st.selectbox(f"Item Type {i + 1}", items_list, key=f"{cat}_it_{i}")
         quantity = st.number_input(f"Quantity {i + 1} (kg)", min_value=0.0, step=0.1, key=f"{cat}_qty_{i}")
         rate = st.number_input(f"Rate {i + 1} (per kg)", min_value=0.0, step=0.1, key=f"{cat}_rate_{i}")
-
         gst_applied = st.checkbox(f"Apply GST for Item {i + 1}", key=f"{cat}_gst_{i}")
 
         adjusted_rate = rate
@@ -358,67 +421,114 @@ def render_entry_form(entry_type: str):
                 adjusted_rate,
                 amount,
             ])
+
         if append_rows_batch(DAYBOOK_SHEET, rows):
             st.success(f"{entry_type} entry added successfully!")
             read_all_rows.clear()
 
 
 # ---------------------------------------------------------------------------
-# 5. Payment / Receipt Form
+# 5. Payment / Receipt Form (UPDATED with Cash/Bank Transfer)
 # ---------------------------------------------------------------------------
+
+
 def render_payment_receipt():
     st.header("Payment / Receipt Entry")
 
     date_val = st.date_input("Date", datetime.now(), key="pr_date")
     reference = st.text_input("Reference", key="pr_ref")
-    mode = st.selectbox("Type", ["Cash", "Bank"], key="pr_mode")
+
+    # Updated mode options
+    mode = st.selectbox("Mode", ["Cash", "Bank", "Bank Transfer"], key="pr_mode")
 
     all_parties = sorted(
-        set(get_parties("Purchase") + get_parties("Sale") + get_parties("Payment") + get_parties("Bank")+get_parties("Cash")
+        set(get_parties("Purchase") + get_parties("Sale") + get_parties("Payment") + get_parties("Bank"))
     )
+
     if not all_parties:
         st.warning("No parties found. Add them in Master Data.")
         return
+
+    # Bank Transfer mode - special handling
+    if mode == "Bank Transfer":
+        st.subheader("Transfer between Cash/Bank accounts")
+        
+        bank_parties = get_parties("Bank")
+        if len(bank_parties) < 2:
+            st.warning("You need at least 2 bank/cash accounts for transfers. Add them in Master Data.")
+            return
+
+        from_account = st.selectbox("From Account", bank_parties, key="pr_from_acc")
+        to_account = st.selectbox("To Account", [b for b in bank_parties if b != from_account], key="pr_to_acc")
+        amount = st.number_input("Amount", min_value=0.0, step=0.1, key="pr_transfer_amt")
+
+        if st.button("Record Transfer", key="pr_transfer_submit"):
+            rows = [
+                # Debit the receiving account (Receipt)
+                [date_val.strftime("%m-%d-%Y"), reference, "Receipt", to_account, "Bank", 0, 0, amount],
+                # Credit the sending account (Payment)
+                [date_val.strftime("%m-%d-%Y"), reference, "Payment", from_account, "Bank", 0, 0, amount],
+            ]
+
+            if append_rows_batch(DAYBOOK_SHEET, rows):
+                st.success(f"Transfer of ₹{amount:,.2f} from {from_account} to {to_account} recorded!")
+                read_all_rows.clear()
+        return
+
+    # Regular Payment/Receipt mode
     party_name = st.selectbox("Party Name", all_parties, key="pr_party")
     voucher_type = st.selectbox("Voucher Type", ["Payment", "Receipt"], key="pr_vtype")
     amount = st.number_input("Amount", min_value=0.0, step=0.1, key="pr_amt")
 
-    ledger_name = None
-    if mode == "Bank":
+    cash_bank_account = None
+    
+    if mode == "Cash":
+        # Auto-select "Cash" account
         bank_parties = get_parties("Bank")
+        if "Cash" in bank_parties:
+            cash_bank_account = "Cash"
+        else:
+            st.warning("Cash account not found. Add 'Cash' party with category 'Bank' in Master Data.")
+            return
+            
+    elif mode == "Bank":
+        bank_parties = [b for b in get_parties("Bank") if b != "Cash"]
         if bank_parties:
-            ledger_name = st.selectbox("Bank Name", bank_parties, key="pr_bank")
+            cash_bank_account = st.selectbox("Bank Name", bank_parties, key="pr_bank")
         else:
             st.warning("No bank parties found. Add one in Master Data with category 'Bank'.")
-    elif mode == "Cash":
-        cash_parties = get_parties("Cash")
-        if cash_parties:
-            ledger_name = st.selectbox("Cash Account", cash_parties, key="pr_cash")
-        else:
-            st.warning("No cash ledger found. Add one in Master Data with category 'Cash'.")
+            return
+
     if st.button("Add Voucher", key="pr_submit"):
-        rows = [[date_val.strftime("%m-%d-%Y"), reference, voucher_type, party_name, mode, 0, 0, amount]]
-        if ledger_name:
+        rows = [
+            # Main entry
+            [date_val.strftime("%m-%d-%Y"), reference, voucher_type, party_name, mode, 0, 0, amount]
+        ]
+
+        # Contra entry in Cash/Bank account
+        if cash_bank_account:
             reverse = "Receipt" if voucher_type == "Payment" else "Payment"
             rows.append([
-                date_val.strftime("%m-%d-%Y"),
-                reference,
-                reverse,
-                ledger_name,
-                mode,
-                0,
-                0,
+                date_val.strftime("%m-%d-%Y"), 
+                reference, 
+                reverse, 
+                cash_bank_account, 
+                mode, 
+                0, 
+                0, 
                 amount
             ])
-           
+
         if append_rows_batch(DAYBOOK_SHEET, rows):
-            st.success(f"{voucher_type} entry added successfully!")
+            st.success(f"{voucher_type} of ₹{amount:,.2f} recorded!")
             read_all_rows.clear()
 
 
 # ---------------------------------------------------------------------------
 # 6. Party Ledger
 # ---------------------------------------------------------------------------
+
+
 def render_party_ledger():
     st.header("Party Ledger")
 
@@ -426,6 +536,7 @@ def render_party_ledger():
     if not all_parties:
         st.info("No parties found.")
         return
+
     party = st.selectbox("Select Party", all_parties, key="led_party")
 
     col1, col2 = st.columns(2)
@@ -436,6 +547,7 @@ def render_party_ledger():
 
     if st.button("Load Ledger", key="led_load"):
         rows = read_all_rows(DAYBOOK_SHEET)
+
         # Start with stored opening balance (only if its date <= start_date)
         stored_bal, has_ob = get_opening_balance(party, start_date)
         opening_balance = stored_bal
@@ -456,6 +568,7 @@ def render_party_ledger():
         for r in rows:
             if r.get("Party Name", r.get("Party", "")) != party:
                 continue
+
             raw_date = r.get("Date", "")
             try:
                 d = datetime.strptime(raw_date, "%m-%d-%Y").date()
@@ -469,6 +582,7 @@ def render_party_ledger():
 
             vtype = r.get("Voucher Type", r.get("Type", ""))
             amt = float(r.get("Amount", 0) or 0)
+
             debit = amt if vtype in ("Sale", "Payment") else 0.0
             credit = amt if vtype in ("Purchase", "Receipt") else 0.0
 
@@ -486,34 +600,44 @@ def render_party_ledger():
             slip = r.get("Slip No.", r.get("Slip No", r.get("Reference", "")))
 
             records.append({
-                "Date": raw_date, "Slip": slip, "Type": vtype,
-                "Item": item, "Qty": qty, "Rate": rate,
-                "Debit": debit, "Credit": credit,
+                "Date": raw_date,
+                "Slip": slip,
+                "Type": vtype,
+                "Item": item,
+                "Qty": qty,
+                "Rate": rate,
+                "Debit": debit,
+                "Credit": credit,
             })
 
         # Build dataframe with opening balance row
         if opening_balance != 0 or records:
             ob_dr = opening_balance if opening_balance > 0 else 0.0
             ob_cr = abs(opening_balance) if opening_balance < 0 else 0.0
+
             opening_row = {
-                "Date": "", "Slip": "", "Type": "Opening Balance",
-                "Item": "", "Qty": "", "Rate": "",
-                "Debit": ob_dr, "Credit": ob_cr,
+                "Date": "",
+                "Slip": "",
+                "Type": "Opening Balance",
+                "Item": "",
+                "Qty": "",
+                "Rate": "",
+                "Debit": ob_dr,
+                "Credit": ob_cr,
             }
+
             df = pd.DataFrame([opening_row] + records)
 
-           # Separate OB
+            # Separate OB
             opening_df = df.iloc[[0]]
             transactions_df = df.iloc[1:].copy()
-            
             transactions_df["Date"] = pd.to_datetime(transactions_df["Date"], errors="coerce")
             transactions_df = transactions_df.sort_values("Date")
-            
             df = pd.concat([opening_df, transactions_df]).reset_index(drop=True)
+
             # Running balance: start from opening, then cumulative sum of net movements
             running = 0.0
             balances = []
-
             for _, row in df.iterrows():
                 running += float(row["Debit"]) - float(row["Credit"])
                 balances.append(running)
@@ -553,6 +677,8 @@ def render_party_ledger():
 # ---------------------------------------------------------------------------
 # 7. PDF Export
 # ---------------------------------------------------------------------------
+
+
 def generate_ledger_pdf(df: pd.DataFrame, party: str, date_range: str) -> bytes:
     pdf = FPDF(orientation="L", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -566,9 +692,17 @@ def generate_ledger_pdf(df: pd.DataFrame, party: str, date_range: str) -> bytes:
 
     cols = list(df.columns)
     col_widths = {
-        "Date": 26, "Slip": 22, "Type": 22, "Item": 28,
-        "Qty": 20, "Rate": 22, "Debit": 28, "Credit": 28, "Balance": 30,
+        "Date": 26,
+        "Slip": 22,
+        "Type": 22,
+        "Item": 28,
+        "Qty": 20,
+        "Rate": 22,
+        "Debit": 28,
+        "Credit": 28,
+        "Balance": 30,
     }
+
     pdf.set_font("Helvetica", "B", 9)
     for c in cols:
         w = col_widths.get(c, 25)
@@ -607,8 +741,11 @@ def generate_ledger_pdf(df: pd.DataFrame, party: str, date_range: str) -> bytes:
 # ---------------------------------------------------------------------------
 # 8. Dashboard
 # ---------------------------------------------------------------------------
+
+
 def render_dashboard():
     st.header("Dashboard")
+
     rows = read_all_rows(DAYBOOK_SHEET)
     if not rows:
         st.info("No data in Daybook yet.")
@@ -623,11 +760,13 @@ def render_dashboard():
         if candidate in df.columns:
             type_col = candidate
             break
+
     amt_col = None
     for candidate in ("Amount", "amount"):
         if candidate in df.columns:
             amt_col = candidate
             break
+
     party_col = None
     for candidate in ("Party Name", "Party", "party"):
         if candidate in df.columns:
@@ -639,15 +778,12 @@ def render_dashboard():
         return
 
     df[amt_col] = pd.to_numeric(df[amt_col], errors="coerce").fillna(0)
- 
 
     if party_col:
         st.subheader("Outstanding Balances")
-
         all_parties = sorted(set(df[party_col]))
 
         final_summary = []
-
         for party in all_parties:
             bal = calculate_party_balance(party)
             if abs(bal) > 0.01:
@@ -666,23 +802,28 @@ def render_dashboard():
 # ---------------------------------------------------------------------------
 # 9. Master Data Management
 # ---------------------------------------------------------------------------
+
+
 def render_master_data():
     st.header("Master Data")
+
     tab1, tab2, tab3 = st.tabs(["Parties", "Items", "Opening Balances"])
 
     with tab1:
         _master_data_tab(PARTIES_SHEET, "Party", ["Name", "Category"],
-                         category_options=["Purchase", "Sale", "Payment", "Bank","Cash"])
+                         category_options=["Purchase", "Sale", "Payment", "Bank"])
+
     with tab2:
         _master_data_tab(ITEMS_SHEET, "Item", ["Name", "Category"],
                          category_options=["Purchase", "Sale"])
+
     with tab3:
         _opening_balances_tab()
 
 
-def _master_data_tab(sheet_name: str, label: str, headers: list[str],
-                     category_options: list[str]):
+def _master_data_tab(sheet_name: str, label: str, headers: list[str], category_options: list[str]):
     all_vals = read_all_values(sheet_name)
+
     if len(all_vals) <= 1:
         st.info(f"No {label.lower()}s found.")
         data_rows = []
@@ -696,8 +837,10 @@ def _master_data_tab(sheet_name: str, label: str, headers: list[str],
             cols = st.columns([3, 2, 1, 1])
             cols[0].write(row[0] if len(row) > 0 else "")
             cols[1].write(row[1] if len(row) > 1 else "")
+
             if cols[2].button("Edit", key=f"{sheet_name}_edit_{idx}"):
                 st.session_state[f"{sheet_name}_editing"] = row_num
+
             if cols[3].button("Del", key=f"{sheet_name}_del_{idx}"):
                 if delete_row(sheet_name, row_num):
                     st.success(f"{label} deleted.")
@@ -710,10 +853,13 @@ def _master_data_tab(sheet_name: str, label: str, headers: list[str],
     if editing_key in st.session_state:
         row_num = st.session_state[editing_key]
         st.subheader(f"Edit {label}")
+
         current = all_vals[row_num - 1] if row_num - 1 < len(all_vals) else ["", ""]
         new_name = st.text_input("Name", value=current[0] if len(current) > 0 else "", key=f"{sheet_name}_ename")
+
         cat_idx = category_options.index(current[1]) if len(current) > 1 and current[1] in category_options else 0
         new_cat = st.selectbox("Category", category_options, index=cat_idx, key=f"{sheet_name}_ecat")
+
         c1, c2 = st.columns(2)
         if c1.button("Save", key=f"{sheet_name}_esave"):
             if update_row(sheet_name, row_num, [new_name, new_cat]):
@@ -723,6 +869,7 @@ def _master_data_tab(sheet_name: str, label: str, headers: list[str],
                 get_parties.clear()
                 get_items.clear()
                 st.rerun()
+
         if c2.button("Cancel", key=f"{sheet_name}_ecancel"):
             del st.session_state[editing_key]
             st.rerun()
@@ -730,6 +877,7 @@ def _master_data_tab(sheet_name: str, label: str, headers: list[str],
     st.subheader(f"Add {label}")
     new_name = st.text_input(f"New {label} Name", key=f"{sheet_name}_new_name")
     new_cat = st.selectbox(f"{label} Category", category_options, key=f"{sheet_name}_new_cat")
+
     if st.button(f"Add {label}", key=f"{sheet_name}_add"):
         if new_name.strip():
             if append_row(sheet_name, [new_name.strip(), new_cat]):
@@ -786,6 +934,7 @@ def _opening_balances_tab():
     # Pre-fill if party already has an opening balance
     prefill_date = date(date.today().year, 4, 1)
     prefill_dr, prefill_cr = 0.0, 0.0
+
     if party in existing:
         row = data_rows[existing[party]]
         try:
@@ -797,16 +946,16 @@ def _opening_balances_tab():
 
     ob_date = st.date_input("Balance as on date", value=prefill_date, key="ob_date",
                             help="Transactions before this date are assumed included in this balance")
+
     col1, col2 = st.columns(2)
     with col1:
-        debit = st.number_input("Debit (they owe you)", min_value=0.0, step=0.1,
-                                value=prefill_dr, key="ob_dr")
+        debit = st.number_input("Debit (they owe you)", min_value=0.0, step=0.1, value=prefill_dr, key="ob_dr")
     with col2:
-        credit = st.number_input("Credit (you owe them)", min_value=0.0, step=0.1,
-                                 value=prefill_cr, key="ob_cr")
+        credit = st.number_input("Credit (you owe them)", min_value=0.0, step=0.1, value=prefill_cr, key="ob_cr")
 
     if st.button("Save Opening Balance", key="ob_save"):
         date_str = ob_date.strftime("%m-%d-%Y")
+
         if party in existing:
             row_num = existing[party] + 2
             if update_row(OPENING_BAL_SHEET, row_num, [party, date_str, debit, credit]):
@@ -834,6 +983,8 @@ def _opening_balances_tab():
 # ---------------------------------------------------------------------------
 # 10. Main App
 # ---------------------------------------------------------------------------
+
+
 def main():
     st.set_page_config(page_title="ERP Data Entry", layout="wide")
 
@@ -844,8 +995,7 @@ def main():
     st.sidebar.title("Menu")
     menu = st.sidebar.radio(
         "Select Page",
-        ["Dashboard", "Purchase Entry", "Sale Entry", "Payment/Receipt Entry",
-         "Party Ledger", "Master Data"],
+        ["Dashboard", "Purchase Entry", "Sale Entry", "Payment/Receipt Entry", "Party Ledger", "Master Data"],
     )
 
     if menu == "Dashboard":
@@ -864,12 +1014,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
