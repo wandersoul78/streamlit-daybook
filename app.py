@@ -128,7 +128,7 @@ def delete_row(worksheet_name: str, row_index: int):
 
 PARTIES_SHEET = "Parties"
 ITEMS_SHEET = "Items"
-DAYBOOK_SHEET = "Daybook_FY26"
+DAYBOOK_SHEET = "Daybook"
 OPENING_BAL_SHEET = "Opening Balances"
 
 # Default seed data (migrated from the old hardcoded lists)
@@ -483,10 +483,11 @@ def render_payment_receipt():
     cash_bank_account = None
     
     if mode == "Cash":
-        # Auto-select "Cash" account
+        # Auto-select "Cash" account and show it
         bank_parties = get_parties("Bank")
         if "Cash" in bank_parties:
             cash_bank_account = "Cash"
+            st.info(f"💰 Contra entry will be posted to: **{cash_bank_account}** account")
         else:
             st.warning("Cash account not found. Add 'Cash' party with category 'Bank' in Master Data.")
             return
@@ -495,6 +496,7 @@ def render_payment_receipt():
         bank_parties = [b for b in get_parties("Bank") if b != "Cash"]
         if bank_parties:
             cash_bank_account = st.selectbox("Bank Name", bank_parties, key="pr_bank")
+            st.info(f"🏦 Contra entry will be posted to: **{cash_bank_account}** account")
         else:
             st.warning("No bank parties found. Add one in Master Data with category 'Bank'.")
             return
