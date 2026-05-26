@@ -438,8 +438,8 @@ def render_payment_receipt():
     date_val = st.date_input("Date", datetime.now(), key="pr_date")
     reference = st.text_input("Reference", key="pr_ref")
 
-    # Updated mode options
-    mode = st.selectbox("Mode", ["Cash", "Bank", "Bank Transfer"], key="pr_mode")
+    # Updated mode options - now includes GST
+    mode = st.selectbox("Mode", ["Cash", "Bank", "GST", "Bank Transfer"], key="pr_mode")
 
     all_parties = sorted(
         set(get_parties("Purchase") + get_parties("Sale") + get_parties("Payment") + get_parties("Bank"))
@@ -475,19 +475,19 @@ def render_payment_receipt():
                 read_all_rows.clear()
         return
 
-    # Regular Payment/Receipt mode
+    # Regular Payment/Receipt mode (including GST mode)
     party_name = st.selectbox("Party Name", all_parties, key="pr_party")
     voucher_type = st.selectbox("Voucher Type", ["Payment", "Receipt"], key="pr_vtype")
     amount = st.number_input("Amount", min_value=0.0, step=0.1, key="pr_amt")
 
-    cash_bank_account = None
+    contra_account = None
     
     if mode == "Cash":
         # Auto-select "Cash" account and show it
         bank_parties = get_parties("Bank")
         if "Cash" in bank_parties:
-            cash_bank_account = "Cash"
-            st.info(f"💰 Contra entry will be posted to: **{cash_bank_account}** account")
+            contra_account = "Cash"
+            st.info(f"💰 Contra entry will be posted to: **{contra_account}** account")
         else:
             st.warning("Cash account not found. Add 'Cash' party with category 'Bank' in Master Data.")
             return
@@ -495,10 +495,26 @@ def render_payment_receipt():
     elif mode == "Bank":
         bank_parties = [b for b in get_parties("Bank") if b != "Cash"]
         if bank_parties:
-            cash_bank_account = st.selectbox("Bank Name", bank_parties, key="pr_bank")
-            st.info(f"🏦 Contra entry will be posted to: **{cash_bank_account}** account")
+            contra_account = st.selectbox("Bank Name", bank_parties, key="pr_bank")
+            st.info(f"🏦 Contra entry will be posted to: **{contra_account}** account")
         else:
             st.warning("No bank parties found. Add one in Master Data with category 'Bank'.")
+            return
+    
+    elif mode == "GST":
+        # GST mode - find GST party from Payment category
+        payment_parties = get_parties("Payment")
+        gst_parties = [p for p in payment_parties if "gst" in p.lower() or "Gst" in p or "GST" in p]
+        
+        if gst_parties:
+            if len(gst_parties) == 1:
+                contra_account = gst_parties[0]
+                st.info(f"📊 GST contra entry will be posted to: **{contra_account}** account")
+            else:
+                contra_account = st.selectbox("Select GST Account", gst_parties, key="pr_gst_acc")
+                st.info(f"📊 GST contra entry will be posted to: **{contra_account}** account")
+        else:
+            st.warning("No GST party found. Add 'Gst' party with category 'Payment' in Master Data.")
             return
 
     if st.button("Add Voucher", key="pr_submit"):
@@ -507,14 +523,14 @@ def render_payment_receipt():
             [date_val.strftime("%m-%d-%Y"), reference, voucher_type, party_name, mode, 0, 0, amount]
         ]
 
-        # Contra entry in Cash/Bank account
-        if cash_bank_account:
+        # Contra entry in Cash/Bank/GST account
+        if contra_account:
             reverse = "Receipt" if voucher_type == "Payment" else "Payment"
             rows.append([
                 date_val.strftime("%m-%d-%Y"), 
                 reference, 
                 reverse, 
-                cash_bank_account, 
+                contra_account, 
                 mode, 
                 0, 
                 0, 
@@ -522,9 +538,9 @@ def render_payment_receipt():
             ])
 
         if append_rows_batch(DAYBOOK_SHEET, rows):
-            st.success(f"{voucher_type} of ₹{amount:,.2f} recorded!")
+            mode_display = f"via {mode}" if mode != "GST" else "with GST adjustment"
+            st.success(f"{voucher_type} of ₹{amount:,.2f} recorded {mode_display}!")
             read_all_rows.clear()
-
 
 # ---------------------------------------------------------------------------
 # 6. Party Ledger
