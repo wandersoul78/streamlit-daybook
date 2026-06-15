@@ -698,7 +698,7 @@ def render_party_ledger():
 
 
 def generate_ledger_pdf(df: pd.DataFrame, party: str, date_range: str) -> bytes:
-    pdf = FPDF(orientation="L", unit="mm", format="A4")
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
