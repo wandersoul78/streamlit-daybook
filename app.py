@@ -710,14 +710,14 @@ def generate_ledger_pdf(df: pd.DataFrame, party: str, date_range: str) -> bytes:
 
     cols = list(df.columns)
     col_widths = {
-        "Date": 24,
-        "Slip": 20,
+        "Date": 28,
+        "Slip": 16,
         "Type": 20,
-        "Item": 24,
+        "Item": 20,
         "Qty": 20,
-        "Rate": 20,
-        "Debit": 24,
-        "Credit": 24,
+        "Rate": 18,
+        "Debit": 22,
+        "Credit": 22,
         "Balance": 26,
     }
 
